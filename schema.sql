@@ -7,6 +7,32 @@
  * @author Xiaoji Wu 59800
  */
 
+ -- =========================================================
+-- D1 TO D2 CHANGES WITH DIRECT IMPLEMENTATION IMPACT
+-- =========================================================
+--
+-- 1. LECTURER and SESSION
+-- A LECTURER specialization and SESSION.lecturer_id were added
+-- to identify the person responsible for conducting each session.
+--
+-- 2. CERTIFICATE, TRAINING_PROGRAM and SESSION
+-- CERTIFICATE.training_program_id and the CERTIFICATE_SESSION
+-- associative table were added. This allows each certificate to
+-- be linked to one training programme and to the paid sessions
+-- that contribute to its credited training hours.
+--
+-- 3. PRESCRIPTION and MEDICATION
+-- The prescription-medication rule was reinforced so that a WAIT
+-- prescription has no medication, while a MEDICATE prescription
+-- references exactly one medication.
+--
+-- 4. Integrity improvements
+-- Additional PostgreSQL constraints and triggers enforce the
+-- business rules defined in D1, including exactly six sessions
+-- per cycle, valid patient-homeopath assignments, purchase
+-- specialization, and certificate eligibility.
+-- ========================================================= 
+
 DROP TABLE IF EXISTS certificate_session, certificate, recording, session, cycle, training_program,
 invoice, payment, enrollment, package_purchase, single_session_purchase,
 purchase, medication, prescription, symptom, consultation, patient_homeopath,
