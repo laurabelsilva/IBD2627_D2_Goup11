@@ -8,6 +8,11 @@
  * @author Xiaoji Wu 59800
  */
 
+-- D1 TO D2 QUERY CHANGES
+-- All 10 queries proposed in D1 have been retained in D2.
+-- No D1 queries were removed.
+-- Existing queries were adapted to the implemented database schema.
+-- Additional queries were added to meet the D2 requirements.
 
 -- =========================================================
 -- VIEWS
