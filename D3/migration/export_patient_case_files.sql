@@ -7,7 +7,7 @@
 
 COPY (
     -- The outer query creates exactly one JSON document for each patient.
-    SELECT jsonb_build_object(
+    SELECT jsonb_build_object(  -- jsonb_build_object means: SQL data to JSON object.
         '_id', pat.patient_id,
         'patient', jsonb_build_object(
             'patientId', pat.patient_id,
@@ -30,9 +30,9 @@ COPY (
             JOIN homeopath h
                 ON h.homeopath_id = ph.homeopath_id
             JOIN person hp
-                ON hp.person_id = h.homeopath_id
-            WHERE ph.patient_id = pat.patient_id
-        ), '[]'::jsonb),
+                ON hp.person_id = h.homeopath_id  
+            WHERE ph.patient_id = pat.patient_id -- WHERE ph.patient_id = pat.patient_id：we take the homeopath of the pacient.
+        ), '[]'::jsonb), 
         -- A consultation and its symptoms are read as part of one patient history.
         'consultations', COALESCE((
             SELECT jsonb_agg(
@@ -78,6 +78,7 @@ COPY (
                         LEFT JOIN medication m
                             ON m.medication_id = pr.medication_id
                         WHERE pr.consultation_id = c.consultation_id
+                        --must be LEFT JOIN, because MEDICATE has mediation, WAIT has no medication.
                     )
                 )
                 ORDER BY c.consultation_date, c.consultation_id

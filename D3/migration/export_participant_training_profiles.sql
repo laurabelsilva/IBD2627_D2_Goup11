@@ -22,6 +22,7 @@ COPY (
                 jsonb_build_object(
                     'purchaseId', pur.purchase_id,
                     'purchaseDate', pur.purchase_date,
+                    -- single_session_purchase table have purchase, else, package purchase
                     'type', CASE
                         WHEN ssp.purchase_id IS NOT NULL THEN 'single_session'
                         ELSE 'package'
@@ -37,6 +38,8 @@ COPY (
                             'paymentDate', pay.payment_date
                         )
                     END,
+                    -- single-session purchase:enrollment -> a session.
+                    -- package purchase: enrollment -> a cycle.
                     'enrollment', jsonb_build_object(
                         'enrollmentId', e.enrollment_id,
                         'registrationDate', e.registration_date,
@@ -108,7 +111,7 @@ COPY (
             JOIN training_program tp
                 ON tp.training_program_id = enrolled_cycle.training_program_id
             WHERE pur.participant_id = part.participant_id
-        ), '[]'::jsonb),
+        ), '[]'::jsonb),-- if found rows -> make an JSON array, else, return array []
         -- Certificate sessions are embedded to show how the certificate was earned.
         'certificates', COALESCE((
             SELECT jsonb_agg(

@@ -1,8 +1,7 @@
 /*
  *
- * Q1-Q10 are read queries using aggregation pipelines, including
- * $unwind, $match, $group, $project, $size, $addToSet, and $sort.
- * Q11-Q14 demonstrate complete CRUD with a temporary document that is deleted.
+ * Q1-Q10 are aggregation queries.
+ * Q11-Q14 are CRUD operations using a temporary patient document.
  */
 
 const salus = db;
