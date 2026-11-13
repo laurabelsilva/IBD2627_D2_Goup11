@@ -54,11 +54,16 @@ purchases, paid status, sessions, recordings, and certificates together.
 ### Patient case files
 
 - Different patients have different numbers of consultations and symptoms.
+For example, Patient A → 1 consultation, 1 symptom
+    Patient B → 5 consultations, many symptoms
 - Consultation notes and symptom descriptions are flexible text fields.
 - A `WAIT` prescription has no medication, while a `MEDICATE` prescription
   includes medication details.
 - When a new consultation happens, it can be added to that patient's
   `consultations` array.
+For example, a new patient may have an empty consultations array, while
+another patient may have one Initial consultation and several Follow-up
+consultations. Both cases can be stored in the same document structure.
 
 ### Participant training profiles
 
@@ -69,10 +74,14 @@ purchases, paid status, sessions, recordings, and certificates together.
 - A new purchase or certificate can be added to one participant profile.
 - The participant portal can read one document instead of joining many
   relational tables for one screen.
+In Salus, a package purchase gives access to the six sessions of one cycle.
+This is a small and bounded array, so embedding the sessions in the
+participant profile is practical for the dashboard.
 
 MongoDB is useful here because the data is nested, variable, and usually read
-together. PostgreSQL is still better for the original payment and invoice
-transactions.
+together. This follows the document-model principle discussed in class: data
+that is commonly accessed together can be stored together in one document.
+PostgreSQL is still better for payment and invoice transactions.
 
 ## 3. Mapping from PostgreSQL to MongoDB
 
@@ -102,10 +111,12 @@ they belong to one consultation.
 - `certificates[]` comes from `certificate`.
 - `coveredSessions[]` comes from `certificate_session` and `session`.
 
-We use embedding, not MongoDB references, because these fields are shown
-together in one participant dashboard. The original PostgreSQL IDs such as
-`sessionId` and `purchaseId` are kept so that the migration can be checked
-and refreshed later.
+We use embedding instead of MongoDB references because the participant dashboard
+displays these fields together. The accessible session details are copied into
+the participant profile. Although a session can appear in more than one
+profile, a package contains only six sessions and the original `sessionId` and
+`purchaseId` are retained. If session data changes in PostgreSQL, running the
+migration again refreshes the related MongoDB profiles.
 
 ## 4. Other NoSQL Options
 
@@ -114,11 +125,12 @@ and refreshed later.
 A graph database could be useful for the training network:
 
 ```text
-Participant -> Purchase -> Cycle -> Session -> Training Programme
+Participant -> Purchase -> Enrollment -> Cycle -> Session
+Cycle -> Training Programme
 ```
 
-It would help with multi-step questions, for example: which participants
-completed one programme and later enrolled in another programme?
+It would help with connection-based questions, for example: which participants
+completed one training programme and later bought a package in another programme?
 
 ### Key-Value database
 
