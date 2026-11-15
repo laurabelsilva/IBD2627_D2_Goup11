@@ -1,4 +1,10 @@
 /*
+ * Salus D3 - PostgreSQL Consistency Counts Export
+ *
+ * @author Ana Paula Tavares 68081
+ * @author Laura Silva 68469
+ * @author Xiaoji Wu 59800
+ *
  * Counts exported from PostgreSQL after migration. The MongoDB consistency
  * script compares these values with equivalent document and embedded-array
  * counts. The output is one JSON object.

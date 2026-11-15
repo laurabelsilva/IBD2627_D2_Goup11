@@ -1,4 +1,10 @@
 /*
+ * Salus D3 - Participant Training Profiles Export
+ *
+ * @author Ana Paula Tavares 68081
+ * @author Laura Silva 68469
+ * @author Xiaoji Wu 59800
+ *
  * Export one MongoDB participant_training_profiles document per
  * participant. Purchases, their accessible sessions, and certificates are
  * embedded because they form one participant-facing dashboard.

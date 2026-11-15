@@ -1,3 +1,9 @@
+#!/usr/bin/env bash
+#  Salus D3 - PostgreSQL to MongoDB Migration
+#
+#  @author Ana Paula Tavares 68081
+#  @author Laura Silva 68469
+#  @author Xiaoji Wu 59800
 #
 # The shell script automates the migration in five steps: 
 # it exports two JSON Lines files and the PostgreSQL counts, 

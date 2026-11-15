@@ -1,4 +1,9 @@
 /*
+ * Salus D3 - MongoDB Queries and CRUD Operations
+ *
+ * @author Ana Paula Tavares 68081
+ * @author Laura Silva 68469
+ * @author Xiaoji Wu 59800
  *
  * Q1-Q10 are aggregation queries.
  * Q11-Q14 are CRUD operations using a temporary patient document.

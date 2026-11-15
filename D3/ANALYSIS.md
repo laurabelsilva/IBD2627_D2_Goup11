@@ -1,5 +1,11 @@
 # Salus D3 - NoSQL Analysis and Justification
 
+## Authors
+
+- Ana Paula Tavares - 68081
+- Laura Silva - 68469
+- Xiaoji Wu - 59800
+
 ## 1. What We Store in MongoDB
 
 PostgreSQL remains the main database for Salus. It is still used for payments,
@@ -53,17 +59,16 @@ purchases, paid status, sessions, recordings, and certificates together.
 
 ### Patient case files
 
-- Different patients have different numbers of consultations and symptoms.
-For example, Patient A → 1 consultation, 1 symptom
-    Patient B → 5 consultations, many symptoms
+- Different patients have different numbers of consultations and symptoms. For
+  example, Patient A may have one consultation and one symptom, while Patient B
+  may have five consultations and several symptoms.
 - Consultation notes and symptom descriptions are flexible text fields.
 - A `WAIT` prescription has no medication, while a `MEDICATE` prescription
   includes medication details.
 - When a new consultation happens, it can be added to that patient's
-  `consultations` array.
-For example, a new patient may have an empty consultations array, while
-another patient may have one Initial consultation and several Follow-up
-consultations. Both cases can be stored in the same document structure.
+  `consultations` array. For example, a new patient may have an empty array,
+  while another patient may have one Initial consultation and several Follow-up
+  consultations. Both cases use the same document structure.
 
 ### Participant training profiles
 

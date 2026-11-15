@@ -1,4 +1,10 @@
 /*
+ * Salus D3 - Data Checks
+ *
+ * @author Ana Paula Tavares 68081
+ * @author Laura Silva 68469
+ * @author Xiaoji Wu 59800
+ *
  * Basic checks after migration.
  * Run after migration/migrate_from_postgres.sh.
  */

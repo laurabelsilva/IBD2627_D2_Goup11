@@ -1,4 +1,9 @@
 /*
+ * Salus D3 - Patient Case Files Export
+ *
+ * @author Ana Paula Tavares 68081
+ * @author Laura Silva 68469
+ * @author Xiaoji Wu 59800
  *
  * JSON Lines is used because mongoimport reads one JSON document per line.
  * The document embeds information owned by one patient: assigned homeopaths,

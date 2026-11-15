@@ -1,4 +1,9 @@
 /*
+ * Salus D3 - MongoDB Model and Indexes
+ *
+ * @author Ana Paula Tavares 68081
+ * @author Laura Silva 68469
+ * @author Xiaoji Wu 59800
  *
  * PostgreSQL remains the main transactional source. These collections are
  * document-oriented read models for clinical case files and participant

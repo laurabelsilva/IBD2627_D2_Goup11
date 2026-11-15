@@ -1,4 +1,10 @@
 /*
+ * Salus D3 - PostgreSQL to MongoDB Consistency Checks
+ *
+ * @author Ana Paula Tavares 68081
+ * @author Laura Silva 68469
+ * @author Xiaoji Wu 59800
+ *
  * Consistency checks.
  *
  * The migration exports PostgreSQL counts to the file named by SYNC_FILE.
