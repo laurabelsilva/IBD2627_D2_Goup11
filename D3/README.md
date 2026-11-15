@@ -154,19 +154,4 @@ The files in `generated/` are created automatically during migration and should 
 
 ## Demonstration Video
 
-The demonstration video should be no longer than five minutes and should show:
 
-1. the D3 project files and `ANALYSIS.md`;
-2. the PostgreSQL-to-MongoDB migration;
-3. the successful consistency check;
-4. selected aggregation queries;
-5. the CRUD demonstration, including the final delete.
-
-## Final Submission
-
-Submit the D3 scripts, `ANALYSIS.md`, this README, and the demonstration video
-in an archive named:
-
-```text
-IBD2627_D3_Group11.zip
-```
