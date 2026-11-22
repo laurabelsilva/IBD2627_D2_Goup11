@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 # Salus D3 - PostgreSQL to MongoDB Migration
 #
