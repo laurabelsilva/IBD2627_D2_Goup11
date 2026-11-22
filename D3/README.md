@@ -152,7 +152,7 @@ The final report should show `PASS` for all 12 checks.
 
 These checks include document and embedded-data counts, patient-homeopath relationships, WAIT prescriptions without medication, and monetary totals compared in cents.
 
-All 12 checks passed during the previous local migration test. The updated D3 files must be tested again before delivery.
+All 12 consistency checks passed during the final local test of the updated D3 implementation.
 
 ## Expected Data
 
