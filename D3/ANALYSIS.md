@@ -164,5 +164,4 @@ compares 12 consistency metrics in both systems:
 - patient-homeopath links and WAIT prescriptions without medication;
 - total purchase amounts and paid amounts, compared in cents.
 
-All 12 checks passed in the previous local migration test. The updated
-D3 version will be tested again before delivery.
+All 12 consistency checks passed during the final local test of the updated D3 implementation.
