@@ -402,6 +402,7 @@ printjson(salus.patient_case_files.findOne(
     { _id: 1, patient: 1, consultations: 1 }
 ));
 
+
 // Q13. UPDATE - $push appends one item to the consultations array.
 print("\nQ13 - UPDATE temporary case file with an embedded consultation");
 printjson(salus.patient_case_files.updateOne(
@@ -418,7 +419,15 @@ printjson(salus.patient_case_files.updateOne(
                     name: demoHomeopath.name
                 },
                 symptoms: [{ name: "Demo symptom", description: "Temporary" }],
-                prescription: { decision: "WAIT", medication: null }
+                prescription: {
+                    decision: "MEDICATE",
+                    medication: {
+                        medicationId: "demo-medication-1",
+                        name: "Demo medication",
+                        potency: "30C",
+                        form: "Granules"
+                    }
+                }
             }
         }
     }
