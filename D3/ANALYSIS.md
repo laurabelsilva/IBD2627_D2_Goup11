@@ -150,15 +150,19 @@ because recording access ends after the allowed period.
 
 ## 5. Migration and Consistency
 
+
 The migration exports one JSON document per patient and per participant from
 PostgreSQL. The JSON Lines files are imported with `mongoimport`.
 
 The original PostgreSQL IDs are preserved in MongoDB. After import, the project
-compares equivalent counts in both systems:
+compares 12 consistency metrics in both systems:
 
 - patients and participant profiles;
 - consultations and symptoms;
 - purchases and paid purchases;
-- certificates and certificate-session links.
+- certificates and certificate-session links;
+- patient-homeopath links and WAIT prescriptions without medication;
+- total purchase amounts and paid amounts, compared in cents.
 
-All eight checks passed in the final test.
+All 12 checks passed in the previous local migration test. The updated
+D3 version will be tested again before delivery.

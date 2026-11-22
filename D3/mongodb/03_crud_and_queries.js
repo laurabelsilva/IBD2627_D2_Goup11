@@ -1,3 +1,4 @@
+
 /*
  * Salus D3 - MongoDB Queries and CRUD Operations
  *
@@ -40,8 +41,9 @@ show(
     ])
 );
 
-// Q2. Unwind one patient document into a chronological clinical timeline.
-// Do not hardcode _id: find a real patient that has at least one consultation.
+// Q2. Chronological clinical timeline for one patient, with nested details and
+// a cross-check that the consultation homeopath is assigned to that patient.
+// Select a real patient dynamically so the query works after a fresh migration.
 const q2Patient = salus.patient_case_files.findOne(
     { "consultations.0": { $exists: true } },
     { _id: 1 }
@@ -52,27 +54,40 @@ if (q2PatientId === null) {
     print("Q2 - No patient_case_file with consultations found. Skipping Q2.");
 } else {
     show(
-        "Q2 - Clinical timeline for one patient with consultations",
+        "Q2 - Clinical timeline, symptom counts and assigned homeopath checks",
         salus.patient_case_files.aggregate([
             { $match: { _id: q2PatientId } },
             { $unwind: "$consultations" },
             {
+                $addFields: {
+                    symptomCount: { $size: { $ifNull: ["$consultations.symptoms", []] } },
+                    homeopathIsAssigned: {
+                        $in: [
+                            "$consultations.homeopath.homeopathId",
+                            "$assignedHomeopaths.homeopathId"
+                        ]
+                    }
+                }
+            },
+            {
                 $project: {
                     _id: 0,
+                    patientId: "$patient.patientId",
                     patient: "$patient.name",
                     date: "$consultations.date",
                     type: "$consultations.type",
                     homeopath: "$consultations.homeopath.name",
+                    homeopathIsAssigned: 1,
                     decision: "$consultations.prescription.decision",
+                    medication: "$consultations.prescription.medication.name",
+                    symptomCount: 1,
                     symptoms: "$consultations.symptoms.name"
                 }
             },
-            { $sort: { date: 1 } }
+            { $sort: { date: 1, type: 1 } }
         ])
     );
 }
-
-
 
 // Q3. Patient load per assigned homeopath, calculated from embedded arrays.
 show(
@@ -117,52 +132,85 @@ show(
     ])
 );
 
-// Q5. Patients with more than one consultation. $size supports variable arrays.
+// Q5. Clinical follow-up analysis: compare Initial and Follow-up visits per patient.
+// Grouping the embedded consultations also shows the earliest/latest dates and
+// distinct prescription decisions, rather than only counting array elements.
 show(
-    "Q5 - Patients with more than one consultation",
+    "Q5 - Patient follow-up histories and prescription decisions",
     salus.patient_case_files.aggregate([
+        { $unwind: "$consultations" },
         {
-            $project: {
-                _id: 0,
-                patientId: "$patient.patientId",
-                patient: "$patient.name",
-                totalConsultations: { $size: "$consultations" }
+            $group: {
+                _id: "$patient.patientId",
+                patient: { $first: "$patient.name" },
+                totalConsultations: { $sum: 1 },
+                initialVisits: {
+                    $sum: { $cond: [{ $eq: ["$consultations.type", "Initial"] }, 1, 0] }
+                },
+                followUpVisits: {
+                    $sum: { $cond: [{ $eq: ["$consultations.type", "Follow-up"] }, 1, 0] }
+                },
+                firstConsultation: { $min: "$consultations.date" },
+                latestConsultation: { $max: "$consultations.date" },
+                decisions: { $addToSet: "$consultations.prescription.decision" }
             }
         },
         { $match: { totalConsultations: { $gt: 1 } } },
-        { $sort: { totalConsultations: -1, patient: 1 } },
+        {
+            $project: {
+                _id: 0,
+                patientId: "$_id",
+                patient: 1,
+                totalConsultations: 1,
+                initialVisits: 1,
+                followUpVisits: 1,
+                firstConsultation: 1,
+                latestConsultation: 1,
+                decisions: 1
+            }
+        },
+        { $sort: { followUpVisits: -1, latestConsultation: -1, patient: 1 } },
         { $limit: 10 }
     ])
 );
 
-// Q6. Paid recordings that are available today. Dates are ISO YYYY-MM-DD
-// strings, so the standard $gte and $lte comparisons are safe.
+// Q6. Paid recordings that are available today. Dates use ISO YYYY-MM-DD.
+// Multiple paid purchases may grant the same participant access to one session.
+// Group by participant ID and session ID to avoid duplicate recording entries.
 show(
     "Q6 - Paid recordings currently available to participants",
     salus.participant_training_profiles.aggregate([
         { $unwind: "$purchases" },
-        // Only a completed payment gives access to a recording.
         { $match: { "purchases.paid": true } },
         { $unwind: "$purchases.accessibleSessions" },
         {
             $match: {
                 "purchases.accessibleSessions.recording": { $ne: null },
-                "purchases.accessibleSessions.recording.availableFrom": {
-                    $lte: today
+                "purchases.accessibleSessions.recording.availableFrom": { $lte: today },
+                "purchases.accessibleSessions.recording.availableUntil": { $gte: today }
+            }
+        },
+        {
+            $group: {
+                _id: {
+                    participantId: "$participant.participantId",
+                    sessionId: "$purchases.accessibleSessions.sessionId"
                 },
-                "purchases.accessibleSessions.recording.availableUntil": {
-                    $gte: today
-                }
+                participant: { $first: "$participant.name" },
+                session: { $first: "$purchases.accessibleSessions.topic" },
+                sessionDate: { $first: "$purchases.accessibleSessions.sessionDate" },
+                recordingUrl: { $first: "$purchases.accessibleSessions.recording.url" },
+                availableUntil: { $max: "$purchases.accessibleSessions.recording.availableUntil" }
             }
         },
         {
             $project: {
                 _id: 0,
-                participant: "$participant.name",
-                session: "$purchases.accessibleSessions.topic",
-                sessionDate: "$purchases.accessibleSessions.sessionDate",
-                recordingUrl: "$purchases.accessibleSessions.recording.url",
-                availableUntil: "$purchases.accessibleSessions.recording.availableUntil"
+                participant: 1,
+                session: 1,
+                sessionDate: 1,
+                recordingUrl: 1,
+                availableUntil: 1
             }
         },
         { $sort: { participant: 1, sessionDate: 1 } },
@@ -189,9 +237,11 @@ show(
     ])
 );
 
-// Q8. Unpaid package purchases requiring follow-up.
+// Q8. Unpaid package purchases grouped by programme for follow-up planning.
+// Calculate the outstanding balance, the number of affected participants,
+// and the oldest pending purchase; include a few example purchases in the results.
 show(
-    "Q8 - Unpaid package purchases",
+    "Q8 - Unpaid package balances by training programme",
     salus.participant_training_profiles.aggregate([
         { $unwind: "$purchases" },
         {
@@ -201,42 +251,86 @@ show(
             }
         },
         {
-            $project: {
-                _id: 0,
-                participantId: "$participant.participantId",
-                participant: "$participant.name",
-                purchaseId: "$purchases.purchaseId",
-                purchaseDate: "$purchases.purchaseDate",
-                amount: "$purchases.amount",
-                programme: "$purchases.program.name"
+            $group: {
+                _id: "$purchases.program.programId",
+                programme: { $first: "$purchases.program.name" },
+                pendingPurchases: { $sum: 1 },
+                outstandingAmount: { $sum: "$purchases.amount" },
+                oldestPurchaseDate: { $min: "$purchases.purchaseDate" },
+                participantIds: { $addToSet: "$participant.participantId" },
+                examples: {
+                    $push: {
+                        purchaseId: "$purchases.purchaseId",
+                        participant: "$participant.name",
+                        amount: "$purchases.amount"
+                    }
+                }
             }
         },
-        { $sort: { purchaseDate: 1 } },
-        { $limit: 10 }
+        {
+            $project: {
+                _id: 0,
+                programId: "$_id",
+                programme: 1,
+                pendingPurchases: 1,
+                outstandingAmount: 1,
+                oldestPurchaseDate: 1,
+                distinctParticipants: { $size: "$participantIds" },
+                examplePurchases: { $slice: ["$examples", 5] }
+            }
+        },
+        { $sort: { outstandingAmount: -1, programme: 1 } }
     ])
 );
 
-// Q9. Certificate hours based on each embedded covered-session array.
+// Q9. Training hours and certificates grouped by programme.
+// Summarize participant-level certificate arrays without double-counting people.
 show(
-    "Q9 - Certificates and covered training hours",
+    "Q9 - Certificates, distinct participants and training hours by programme",
     salus.participant_training_profiles.aggregate([
         { $unwind: "$certificates" },
         {
             $project: {
                 _id: 0,
+                participantId: "$participant.participantId",
                 participant: "$participant.name",
                 certificateId: "$certificates.certificateId",
+                programmeId: "$certificates.program.programId",
                 programme: "$certificates.program.name",
-                periodStart: "$certificates.periodStart",
-                periodEnd: "$certificates.periodEnd",
                 coveredSessions: { $size: "$certificates.coveredSessions" },
-                // The Salus rule gives two training hours for each session.
-                creditedHours: {
-                    $multiply: [{ $size: "$certificates.coveredSessions" }, 2]
+                // Salus awards two training hours per covered session.
+                creditedHours: { $multiply: [{ $size: "$certificates.coveredSessions" }, 2] }
+            }
+        },
+        {
+            $group: {
+                _id: { programmeId: "$programmeId", programme: "$programme" },
+                certificatesIssued: { $sum: 1 },
+                participantIds: { $addToSet: "$participantId" },
+                totalCoveredSessions: { $sum: "$coveredSessions" },
+                totalCreditedHours: { $sum: "$creditedHours" },
+                examples: {
+                    $push: {
+                        participant: "$participant",
+                        certificateId: "$certificateId",
+                        creditedHours: "$creditedHours"
+                    }
                 }
             }
         },
-        { $sort: { participant: 1, certificateId: 1 } }
+        {
+            $project: {
+                _id: 0,
+                programmeId: "$_id.programmeId",
+                programme: "$_id.programme",
+                certificatesIssued: 1,
+                distinctParticipants: { $size: "$participantIds" },
+                totalCoveredSessions: 1,
+                totalCreditedHours: 1,
+                examples: { $slice: ["$examples", 5] }
+            }
+        },
+        { $sort: { totalCreditedHours: -1, programme: 1 } }
     ])
 );
 
@@ -271,9 +365,21 @@ show(
     ])
 );
 
-// Q11. CREATE - insert a temporary document satisfying the collection validator.
+// Q11. CREATE - insert a realistic temporary patient document.
+// Reuse a real homeopath from the migrated data so the assignment and
+// the Initial consultation refer to the same homeopath.
 const demoId = 999999;
+const homeopathExample = salus.patient_case_files.findOne(
+    { "assignedHomeopaths.0": { $exists: true } },
+    { assignedHomeopaths: 1 }
+);
+if (!homeopathExample || !homeopathExample.assignedHomeopaths.length) {
+    throw new Error("CRUD demo requires an existing assigned homeopath.");
+}
+const demoHomeopath = homeopathExample.assignedHomeopaths[0];
+
 salus.patient_case_files.deleteOne({ _id: demoId });
+
 print("\nQ11 - CREATE temporary patient case file");
 printjson(salus.patient_case_files.insertOne({
     _id: demoId,
@@ -284,7 +390,7 @@ printjson(salus.patient_case_files.insertOne({
         phone: null,
         country: "Portugal"
     },
-    assignedHomeopaths: [],
+    assignedHomeopaths: [demoHomeopath],
     consultations: [],
     migration: { source: "CRUD demonstration", component: "patient_case_files" }
 }));
@@ -305,15 +411,19 @@ printjson(salus.patient_case_files.updateOne(
             consultations: {
                 consultationId: "demo-consultation-1",
                 date: today,
-                type: "Follow-up",
-                notes: "Temporary CRUD demonstration consultation.",
-                homeopath: null,
+                type: "Initial",
+                notes: "Initial assessment for temporary CRUD demonstration.",
+                homeopath: {
+                    homeopathId: demoHomeopath.homeopathId,
+                    name: demoHomeopath.name
+                },
                 symptoms: [{ name: "Demo symptom", description: "Temporary" }],
                 prescription: { decision: "WAIT", medication: null }
             }
         }
     }
 ));
+
 printjson(salus.patient_case_files.findOne(
     { _id: demoId },
     { _id: 0, "patient.name": 1, consultations: 1 }
@@ -322,6 +432,7 @@ printjson(salus.patient_case_files.findOne(
 // Q14. DELETE - remove the temporary document so migrated data remains unchanged.
 print("\nQ14 - DELETE temporary patient case file");
 printjson(salus.patient_case_files.deleteOne({ _id: demoId }));
+
 print("Temporary document remaining: " +
     salus.patient_case_files.countDocuments({ _id: demoId }));
 
